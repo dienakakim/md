@@ -24,9 +24,9 @@ var helpText = `
 Usage: ${prog} --file=FILE.md
        ${prog} --port 3000 --file=FILE.md
 
-    --port		Port to serve from
+    --port      Port to serve from
     --dark      Display in dark theme
-	--help		Show this help screen
+    --help      Show this help screen
 `
 
 var errorText = "Failed to parse markdown"
