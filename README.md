@@ -13,13 +13,17 @@ go get github.com/dienakakim/mds
 ## Usage
 
 ```bash
-mds --file=README.md
+mds --file=README.md [--port=8080] [--dark]
 ```
 
 ## License
 
-Copyright (c) 2020 Dien Tran. See LICENSE file. Enough parts of the code have been rewritten that I can safely pronounce it "original".
+Copyright &copy; 2020 Dien Tran. See LICENSE file. Enough parts of the code have been rewritten that I can safely pronounce it "original".
 
 ## P.S
 
-`md` is a bad name for a project, as it clashes with the "make directory" command on Windows. This spurred me to initiate this fork, but that is not the only fix this fork makes: a dark theme (enabled with the flag `--dark`) and syntax highlighting for your favorite language are now included.
+`md` is a bad name for a project, as it clashes with the "make directory" command on Windows. This spurred me to initiate this fork, but along came various other features:
+
+- Tailwind CSS styling support
+- Dark theme (enabled with the flag `--dark`)
+- Syntax highlighting, for your favorite language

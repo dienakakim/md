@@ -16,6 +16,7 @@ import (
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 // Help text
@@ -80,7 +81,7 @@ func main() {
 	} else {
 		highlightingStyle = "monokailight"
 	}
-	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))))
+	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))), goldmark.WithRendererOptions(html.WithUnsafe()))
 
 	// Create new ServeMux
 	sm := http.NewServeMux()
