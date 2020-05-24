@@ -1,20 +1,21 @@
-# md
+# mds
 
-Zero configuration minimal markdown server for local rendering.
+A fork of [tlight's md](https://github.com/tlight/md) that uses the [goldmark](https://github.com/yuin/goldmark) renderer instead of [blackfriday](https://github.com/russross/blackfriday/). As is the original project:
+
+> Zero configuration minimal markdown server for local rendering.
 
 ## Installation
 
-```
-$ go get github.com/tlight/md
+```bash
+go get github.com/dienakakim/mds
 ```
 
 ## Usage
 
-```sh
-> md README.md
-Starting Markdown Server for 'README.md' at http://localhost:8080
+```bash
+mds README.md
 ```
 
-# License
+## License
 
- MIT
+Copyright (c) 2018 Tim, (c) 2020 Dien Tran. See LICENSE file.

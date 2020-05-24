@@ -1,6 +1,8 @@
+// A Markdown server that uses yuin's goldmark with GFM extensions.
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"html/template"
@@ -8,20 +10,24 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
-	// "github.com/russross/blackfriday/v2"
-	"gopkg.in/russross/blackfriday.v2"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 )
 
+// Help text
 var helpText = `
-Usage: md FILE.md
-       md --port 3000 README.md
+Usage: ${prog} FILE.md
+       ${prog} --port 3000 FILE.md
 
 	--port		Port to serve from
 	--help		Show this help screen
 `
 
-var html = `
+// Default template. TODO: allow the user to use a custom template
+var htmlTemplate = `
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -45,23 +51,21 @@ var html = `
 	</head>
 	<body>
 		<article class="markdown-body">
-			{{.HTML}}
+			{{.Body}}
 		</article>
   </body>
 </html>`
 
-// MarkdownHandler contains code & configuration
-type MarkdownHandler struct {
-	Filename string
-	Markdown string
-	Template *template.Template
-	HTML     template.HTML
+var errorText = "Failed to parse markdown"
+
+type RenderedHTML struct {
+	Body template.HTML
 }
 
-// entry point & validation
+// main is the driver code for the program.
 func main() {
 	help := flag.Bool("help", false, "show help")
-	port := flag.String("port", "8080", "Server port")
+	port := flag.String("port", "8080", "server port")
 	flag.Parse()
 	args := flag.Args()
 
@@ -72,49 +76,49 @@ func main() {
 	} else if len(args) > 1 {
 		usage("Please limit to a single file")
 	}
-	filename := args[0]
 
-	// Serve MarkdownHandler
-	log.Printf("Starting Markdown Server for '%s' at http://localhost:%s", filename, *port)
-	http.Handle("/", NewMarkdownHandler(filename))
-	err := http.ListenAndServe(":"+*port, nil)
-	log.Fatal(err)
+	// Create template
+	templ, err := template.New("md").Parse(htmlTemplate)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a goldmark instance with GFM extensions
+	gm := goldmark.New(goldmark.WithExtensions(extension.GFM))
+
+	// Create new ServeMux
+	sm := http.NewServeMux()
+	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, gm, args[0], templ)
+	})
+
+	// Serve
+	log.Printf("Starting server on port %s", *port)
+	if err := http.ListenAndServe(":"+*port, sm); err != nil {
+		log.Fatal(err)
+	}
 }
 
+// usage displays the appropriate notice if the user did not specify the Markdown file to render.
 func usage(note string) {
 	if len(note) > 0 {
 		fmt.Println("Error: " + note)
 	}
-	fmt.Println(helpText)
+	_, fileName := filepath.Split(os.Args[0])
+	fmt.Println(strings.Replace(helpText, "${prog}", fileName, -1))
 	os.Exit(0)
 }
 
-// NewMarkdownHandler returns obj
-func NewMarkdownHandler(filename string) *MarkdownHandler {
-	t, err := template.New("md").Parse(string(html))
+// render uses the given goldmark instance to render the HTML.
+func render(w http.ResponseWriter, r *http.Request, gm goldmark.Markdown, filename string, templ *template.Template) {
+	markdown, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &MarkdownHandler{
-		Filename: filename,
-		Template: t,
+	var html bytes.Buffer
+	if err := gm.Convert(markdown, &html); err != nil {
+		log.Println(errorText)
 	}
-}
-
-// ServeHTTP implements the Handler interface to respond to request by converting markdown & rendering html
-func (s *MarkdownHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GET /")
-	s.Refresh()
-	s.Template.Execute(w, s)
-}
-
-// Refresh updates the file Input Markdown & Output HTML stored in the struct
-func (s *MarkdownHandler) Refresh() {
-	markdown, err := ioutil.ReadFile(s.Filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	s.Markdown = string(markdown)
-	html := blackfriday.Run([]byte(s.Markdown))
-	s.HTML = template.HTML(html)
+	rendered := RenderedHTML{Body: template.HTML(html.String())}
+	templ.Execute(w, rendered)
 }
