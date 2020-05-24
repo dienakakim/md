@@ -74,7 +74,13 @@ func main() {
 	}
 
 	// Create a Goldmark instance with GFM extensions
-	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(highlighting.WithStyle("monokailight"))))
+	var highlightingStyle string
+	if *dark {
+		highlightingStyle = "solarized-dark"
+	} else {
+		highlightingStyle = "monokailight"
+	}
+	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))))
 
 	// Create new ServeMux
 	sm := http.NewServeMux()
