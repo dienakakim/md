@@ -103,6 +103,16 @@ func main() {
 		log.Printf("%s %s", r.Method, r.URL)
 		render(w, r, gm, templ, config)
 	})
+	sm.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL)
+		w.Header().Set("Content-Type", "image/x-icon")
+		faviconIcoBytes, err := assetsFaviconIcoBytes()
+		if err != nil {
+			log.Fatal(err)
+		}
+		w.Write(faviconIcoBytes)
+		return
+	})
 
 	// Initialize signal handler
 	signals := make(chan os.Signal, 1)
