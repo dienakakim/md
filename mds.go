@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -10,9 +11,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 
+	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/extension"
@@ -32,14 +35,23 @@ Usage: ${prog} --file=FILE.md
 var errorText = "Failed to parse markdown"
 
 type RenderedHTML struct {
-	Body  template.HTML
-	Style template.CSS
+	Body     template.HTML
+	Style    template.CSS
+	FileName string
+}
+
+type Config struct {
+	DarkMode   bool
+	FileName   string
+	MathJax    bool
+	StyleBytes []byte
 }
 
 // main is the driver code for the program.
 func main() {
 	help := flag.Bool("help", false, "show help")
 	dark := flag.Bool("dark", false, "enable dark theme")
+	mathMode := flag.Bool("math", true, "enable MathJax")
 	port := flag.String("port", "8080", "server port")
 	file := flag.String("file", "", "filename")
 	flag.Parse()
@@ -50,20 +62,22 @@ func main() {
 		usage("Please provide a file as an argument e.g. --file=README.md")
 	}
 
+	config := Config{DarkMode: *dark, FileName: *file, MathJax: *mathMode}
+
 	// Create template
-	var htmlTemplateBytes, styleBytes []byte
+	var htmlTemplateBytes []byte
 	if *dark {
-		styleBytes_, err := assetsDarkOutCssBytes()
+		styleBytes, err := assetsDarkOutCssBytes()
 		if err != nil {
 			log.Fatal(err)
 		}
-		styleBytes = styleBytes_
+		config.StyleBytes = styleBytes
 	} else {
-		styleBytes_, err := assetsLightOutCssBytes()
+		styleBytes, err := assetsLightOutCssBytes()
 		if err != nil {
 			log.Fatal(err)
 		}
-		styleBytes = styleBytes_
+		config.StyleBytes = styleBytes
 	}
 	htmlTemplateBytes, err := assetsIndexHtmlBytes()
 	if err != nil {
@@ -81,19 +95,84 @@ func main() {
 	} else {
 		highlightingStyle = "monokailight"
 	}
-	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))), goldmark.WithRendererOptions(html.WithUnsafe()))
+	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))), goldmark.WithRendererOptions(html.WithUnsafe()))
 
 	// Create new ServeMux
 	sm := http.NewServeMux()
 	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, gm, *file, templ, string(styleBytes))
+		log.Printf("%s %s", r.Method, r.URL)
+		render(w, r, gm, templ, config)
 	})
 
+	// Initialize signal handler
+	signals := make(chan os.Signal, 1)
+	done := make(chan bool)
+	signal.Notify(signals, os.Interrupt, os.Kill)
+	paused := false
+	go func(config *Config) {
+		for {
+			sig := <-signals
+			switch sig {
+			case os.Interrupt:
+				if !paused {
+					// Pause menu
+					paused = true
+					log.Println("Paused.")
+					fmt.Println("Choose one of the below options:")
+					fmt.Println("1. Toggle dark mode")
+					fmt.Println("2. Change filename")
+					fmt.Println("3. Exit")
+					fmt.Printf("> ")
+					var choice int
+					fmt.Scanf("%d\n", &choice)
+					switch choice {
+					case 1:
+						config.DarkMode = !config.DarkMode
+						status := "enabled"
+						if config.DarkMode {
+							config.StyleBytes, _ = assetsDarkOutCssBytes()
+						} else {
+							status = "disabled"
+							config.StyleBytes, _ = assetsLightOutCssBytes()
+						}
+						log.Printf("Dark mode %s", status)
+						paused = false
+					case 2:
+						fmt.Println("Enter in new Markdown filename: ")
+						fmt.Printf("> ")
+						input := bufio.NewScanner(os.Stdin)
+						if input.Scan() {
+							config.FileName = strings.Trim(input.Text(), "\"")
+							log.Printf("Filename changed to: \"%s\"", config.FileName)
+						} else {
+							log.Println("Filename unchanged")
+						}
+						paused = false
+					case 3:
+						signals <- os.Kill
+					default:
+						log.Printf("Invalid value: %d", choice)
+					}
+				} else {
+					log.Fatal("Interrupt received twice. Force-closing.")
+				}
+			case os.Kill:
+				// Terminate now
+				done <- true
+				break
+			}
+		}
+	}(&config)
+
 	// Serve
-	log.Printf("Starting server on port %s", *port)
-	if err := http.ListenAndServe(":"+*port, sm); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		log.Printf("Starting server on port %s", *port)
+		if err := http.ListenAndServe(":"+*port, sm); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	<-done
+
 }
 
 // usage displays the appropriate notice if the user did not specify the Markdown file to render.
@@ -107,15 +186,20 @@ func usage(note string) {
 }
 
 // render uses the given Goldmark instance to render the HTML.
-func render(w http.ResponseWriter, r *http.Request, gm goldmark.Markdown, filename string, templ *template.Template, css string) {
-	markdown, err := ioutil.ReadFile(filename)
+func render(w http.ResponseWriter, r *http.Request, gm goldmark.Markdown, templ *template.Template, config Config) {
+	markdown, err := ioutil.ReadFile(config.FileName)
 	if err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusNotFound)
+		err := fmt.Sprintf("File \"%s\" cannot be opened", config.FileName)
+		fmt.Fprintln(w, err)
+		log.Println(err)
+		return
 	}
 	var html bytes.Buffer
 	if err := gm.Convert(markdown, &html); err != nil {
 		log.Println(errorText)
 	}
-	rendered := RenderedHTML{Body: template.HTML(html.String()), Style: template.CSS(css)}
+	_, fileName := filepath.Split(config.FileName)
+	rendered := RenderedHTML{Body: template.HTML(html.String()), Style: template.CSS(string(config.StyleBytes)), FileName: fileName}
 	templ.Execute(w, rendered)
 }
