@@ -19076,8 +19076,8 @@ video {
 .markdown-body {
   padding-left: 0;
   padding-right: 0;
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial,
     sans-serif, Apple Color Emoji, Segoe UI Emoji;
   letter-spacing: 0;
@@ -19091,6 +19091,8 @@ video {
     width: 58.333333%;
     padding-left: 5rem;
     padding-right: 5rem;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
 }
 

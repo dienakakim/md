@@ -127,6 +127,7 @@ func main() {
 					fmt.Scanf("%d\n", &choice)
 					switch choice {
 					case 1:
+						// Toggle dark mode
 						config.DarkMode = !config.DarkMode
 						status := "enabled"
 						if config.DarkMode {
@@ -138,6 +139,7 @@ func main() {
 						log.Printf("Dark mode %s", status)
 						paused = false
 					case 2:
+						// Change filename
 						fmt.Println("Enter in new Markdown filename: ")
 						fmt.Printf("> ")
 						input := bufio.NewScanner(os.Stdin)
@@ -149,11 +151,13 @@ func main() {
 						}
 						paused = false
 					case 3:
+						// Exit, send signal
 						signals <- os.Kill
 					default:
 						log.Printf("Invalid value: %d", choice)
 					}
 				} else {
+					// `paused` is true, so os.Interrupt received twice
 					log.Fatal("Interrupt received twice. Force-closing.")
 				}
 			case os.Kill:
@@ -171,8 +175,10 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	<-done
 
+	// Block until receipt
+	<-done
+	// Done.
 }
 
 // usage displays the appropriate notice if the user did not specify the Markdown file to render.
