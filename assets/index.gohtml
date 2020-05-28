@@ -5,31 +5,17 @@
     <style>
     {{.Style}}
     </style>
-    <script>
-        // Disable `hidden` when MathJax finishes rendering
-        if (!window.MathJax) {
-            window.MathJax = {
-                startup: {
-                    pageReady() {
-                        return MathJax.startup.defaultPageReady().then(function () {
-                            document.getElementById('container').classList.remove('hidden');
-                        });
-                    }
-                }
-            }
-        }
-    </script>
     <title>{{.FileName}}</title>
     <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
 </head>
 
 <body>
-    <div class="md-container hidden" id="container">
+    <div class="md-container" id="container" style="display: none;">
         <div class="markdown-body">
             {{.Body}}
         </div>
     </div>
-    <script defer>
+    <script>
         // Simple test (courtesy of the MathJax project themselves) that checks for page
         // includes TeX before importing it
         (function () {
@@ -37,11 +23,10 @@
             if (body.match(/(?:\$|\\\(|\\\[|\\begin\{.*?})/)) {
                 if (!window.MathJax) {
                     window.MathJax = {
-                        tex: {
-                            inlineMath: {
-                                '[+]': [
-                                    ['$', '$']
-                                ]
+                        startup: {
+                            pageReady() {
+                                document.getElementById('container').style.display = '';
+                                return MathJax.startup.defaultPageReady();
                             }
                         }
                     };
