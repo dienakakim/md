@@ -69,13 +69,13 @@ func main() {
 	// Create template
 	var htmlTemplateBytes []byte
 	if *dark {
-		styleBytes := MustAsset("dark.out.css")
+		styleBytes := MustAsset("assets/dark.out.css")
 		config.StyleBytes = styleBytes
 	} else {
-		styleBytes := MustAsset("light.out.css")
+		styleBytes := MustAsset("assets/light.out.css")
 		config.StyleBytes = styleBytes
 	}
-	htmlTemplateBytes = MustAsset("index.html")
+	htmlTemplateBytes = MustAsset("assets/index.gohtml")
 	templ, err := template.New("md").Parse(string(htmlTemplateBytes))
 	if err != nil {
 		log.Fatal(err)
@@ -99,10 +99,7 @@ func main() {
 	sm.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL)
 		w.Header().Set("Content-Type", "image/x-icon")
-		faviconIcoBytes, err := assetsFaviconIcoBytes()
-		if err != nil {
-			log.Fatal(err)
-		}
+		faviconIcoBytes := MustAsset("assets/favicon.ico")
 		w.Write(faviconIcoBytes)
 		return
 	})

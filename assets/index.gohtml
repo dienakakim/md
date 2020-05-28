@@ -1,0 +1,57 @@
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+    {{.Style}}
+    </style>
+    <script>
+        // Disable `hidden` when MathJax finishes rendering
+        if (!window.MathJax) {
+            window.MathJax = {
+                startup: {
+                    pageReady() {
+                        return MathJax.startup.defaultPageReady().then(function () {
+                            document.getElementById('container').classList.remove('hidden');
+                        });
+                    }
+                }
+            }
+        }
+    </script>
+    <title>{{.FileName}}</title>
+    <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+</head>
+
+<body>
+    <div class="md-container hidden" id="container">
+        <div class="markdown-body">
+            {{.Body}}
+        </div>
+    </div>
+    <script defer>
+        // Simple test (courtesy of the MathJax project themselves) that checks for page
+        // includes TeX before importing it
+        (function () {
+            var body = document.body.textContent;
+            if (body.match(/(?:\$|\\\(|\\\[|\\begin\{.*?})/)) {
+                if (!window.MathJax) {
+                    window.MathJax = {
+                        tex: {
+                            inlineMath: {
+                                '[+]': [
+                                    ['$', '$']
+                                ]
+                            }
+                        }
+                    };
+                }
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+                document.head.appendChild(script);
+            }
+        })();
+    </script>
+</body>
+
+</html>
