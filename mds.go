@@ -34,12 +34,14 @@ Usage: ${prog} --file=FILE.md
 
 var errorText = "Failed to parse markdown"
 
+// RenderedHTML is the template struct used for the templating engine.
 type RenderedHTML struct {
 	Body     template.HTML
 	Style    template.CSS
 	FileName string
 }
 
+// Config saves the current configuration of this server run.
 type Config struct {
 	DarkMode   bool
 	FileName   string
@@ -79,7 +81,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Create a Goldmark instance with GFM extensions
+	// Create a Goldmark instance with custom settings
 	var highlightingStyle string
 	if *dark {
 		highlightingStyle = "solarized-dark"
