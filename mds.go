@@ -1,4 +1,4 @@
-// A Markdown server that uses yuin's goldmark with GFM extensions.
+// A Markdown server that uses the Goldmark engine and dark theme swappability.
 package main
 
 import (
@@ -67,22 +67,13 @@ func main() {
 	// Create template
 	var htmlTemplateBytes []byte
 	if *dark {
-		styleBytes, err := assetsDarkOutCssBytes()
-		if err != nil {
-			log.Fatal(err)
-		}
+		styleBytes := MustAsset("dark.out.css")
 		config.StyleBytes = styleBytes
 	} else {
-		styleBytes, err := assetsLightOutCssBytes()
-		if err != nil {
-			log.Fatal(err)
-		}
+		styleBytes := MustAsset("light.out.css")
 		config.StyleBytes = styleBytes
 	}
-	htmlTemplateBytes, err := assetsIndexHtmlBytes()
-	if err != nil {
-		log.Fatal(err)
-	}
+	htmlTemplateBytes = MustAsset("index.html")
 	templ, err := template.New("md").Parse(string(htmlTemplateBytes))
 	if err != nil {
 		log.Fatal(err)
@@ -169,6 +160,7 @@ func main() {
 				} else {
 					// `paused` is true, so os.Interrupt received twice
 					log.Fatal("Interrupt received twice. Force-closing.")
+					signals <- os.Kill
 				}
 			case os.Kill:
 				// Terminate now
