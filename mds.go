@@ -82,19 +82,18 @@ func main() {
 	}
 
 	// Create a Goldmark instance with custom settings
-	var highlightingStyle string
-	if *dark {
-		highlightingStyle = "solarized-dark"
-	} else {
-		highlightingStyle = "monokailight"
-	}
-	gm := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle(highlightingStyle))), goldmark.WithRendererOptions(html.WithUnsafe()))
+	gmLight := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle("monokailight"))), goldmark.WithRendererOptions(html.WithUnsafe()))
+	gmDark := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle("solarized-dark"))), goldmark.WithRendererOptions(html.WithUnsafe()))
 
 	// Create new ServeMux
 	sm := http.NewServeMux()
 	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL)
-		render(w, r, gm, templ, config)
+		if config.DarkMode {
+			render(w, r, gmDark, templ, config)
+		} else {
+			render(w, r, gmLight, templ, config)
+		}
 	})
 	sm.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL)
