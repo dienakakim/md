@@ -52,6 +52,7 @@ type Config struct {
 
 // main is the driver code for the program.
 func main() {
+	// Flags
 	help := flag.Bool("help", false, "show help")
 	dark := flag.Bool("dark", false, "enable dark theme")
 	mathMode := flag.Bool("math", true, "enable MathJax")
@@ -82,12 +83,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// goldmarkInitializer will initialize Goldmark with:
+	// - GitHub Flavored Markdown
+	// - MathJax
+	// - Appropriate styling for given theme
+	// - Allow custom HTML
+	// - Auto heading ID generation
 	goldmarkInitializer := func(style string) goldmark.Markdown {
 		return goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle(style))), goldmark.WithRendererOptions(html.WithUnsafe()),
 			goldmark.WithParserOptions(parser.WithAutoHeadingID()))
 	}
-
-	// Create a Goldmark instance with custom settings
 	gmLight := goldmarkInitializer("monokailight")
 	gmDark := goldmarkInitializer("solarized-dark")
 
