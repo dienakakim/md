@@ -19,6 +19,7 @@ import (
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 )
 
@@ -81,9 +82,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	goldmarkInitializer := func(style string) goldmark.Markdown {
+		return goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle(style))), goldmark.WithRendererOptions(html.WithUnsafe()),
+			goldmark.WithParserOptions(parser.WithAutoHeadingID()))
+	}
+
 	// Create a Goldmark instance with custom settings
-	gmLight := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle("monokailight"))), goldmark.WithRendererOptions(html.WithUnsafe()))
-	gmDark := goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle("solarized-dark"))), goldmark.WithRendererOptions(html.WithUnsafe()))
+	gmLight := goldmarkInitializer("monokailight")
+	gmDark := goldmarkInitializer("solarized-dark")
 
 	// Create new ServeMux
 	sm := http.NewServeMux()
