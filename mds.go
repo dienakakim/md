@@ -133,10 +133,12 @@ func main() {
 					fmt.Println("2. Change filename")
 					fmt.Println("3. Exit")
 					fmt.Printf("> ")
-					var choice int
-					fmt.Scanf("%d\n", &choice)
-					switch choice {
-					case 1:
+					var choiceStr string
+					fmt.Scanln(&choiceStr)
+					choiceStr = strings.TrimSpace(choiceStr)
+
+					switch choiceStr {
+					case "1":
 						// Toggle dark mode
 						config.DarkMode = !config.DarkMode
 						status := "enabled"
@@ -148,7 +150,7 @@ func main() {
 						}
 						log.Printf("Dark mode %s", status)
 						paused = false
-					case 2:
+					case "2":
 						// Change filename
 						fmt.Println("Enter in new Markdown filename: ")
 						fmt.Printf("> ")
@@ -160,11 +162,12 @@ func main() {
 							log.Println("Filename unchanged")
 						}
 						paused = false
-					case 3:
+					case "3":
 						// Exit, send signal
 						signals <- os.Kill
 					default:
-						log.Printf("Invalid value: %d", choice)
+						log.Printf("Invalid value: %s", choiceStr)
+						paused = false
 					}
 				} else {
 					// `paused` is true, so os.Interrupt received twice
