@@ -3,11 +3,9 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	. "github.com/dienakakim/mds/lib/render"
+	. "github.com/dienakakim/mds/lib/structs"
 	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting"
@@ -32,23 +32,6 @@ Usage: ${prog} --file=FILE.md
     --dark      Display in dark theme
     --help      Show this help screen
 `
-
-var errorText = "Failed to parse markdown"
-
-// RenderedHTML is the template struct used for the templating engine.
-type RenderedHTML struct {
-	Body     template.HTML
-	Style    template.CSS
-	FileName string
-}
-
-// Config saves the current configuration of this server run.
-type Config struct {
-	DarkMode   bool
-	FileName   string
-	MathJax    bool
-	StyleBytes []byte
-}
 
 // main is the driver code for the program.
 func main() {
@@ -101,9 +84,9 @@ func main() {
 	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL)
 		if config.DarkMode {
-			render(w, r, gmDark, templ, config)
+			Render(w, r, gmDark, templ, config)
 		} else {
-			render(w, r, gmLight, templ, config)
+			Render(w, r, gmLight, templ, config)
 		}
 	})
 	sm.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
@@ -203,23 +186,4 @@ func usage(note string) {
 	_, fileName := filepath.Split(os.Args[0])
 	fmt.Println(strings.Replace(helpText, "${prog}", fileName, -1))
 	os.Exit(0)
-}
-
-// render uses the given Goldmark instance to render the HTML.
-func render(w http.ResponseWriter, r *http.Request, gm goldmark.Markdown, templ *template.Template, config Config) {
-	markdown, err := ioutil.ReadFile(config.FileName)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		err := fmt.Sprintf("File \"%s\" cannot be opened", config.FileName)
-		fmt.Fprintln(w, err)
-		log.Println(err)
-		return
-	}
-	var html bytes.Buffer
-	if err := gm.Convert(markdown, &html); err != nil {
-		log.Println(errorText)
-	}
-	_, fileName := filepath.Split(config.FileName)
-	rendered := RenderedHTML{Body: template.HTML(html.String()), Style: template.CSS(string(config.StyleBytes)), FileName: fileName}
-	templ.Execute(w, rendered)
 }
