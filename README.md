@@ -27,3 +27,11 @@ Copyright &copy; 2020 Dien Tran. See LICENSE file. Enough parts of the code have
 - Tailwind CSS styling support
 - Dark theme (enabled with the flag `--dark`)
 - Syntax highlighting, for your favorite language
+
+## P.P.S: Cross-compilation build program
+
+There is a build program at `build/build.go` that aids in producing binaries you see in the releases. It is intended to be run as
+
+> go run build/build.go mds v1.3.0
+
+assuming you actually have Go installed and the version is currently v1.3.0.
