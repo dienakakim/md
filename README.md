@@ -36,4 +36,4 @@ There is a build program at `build/build.go` that aids in producing binaries you
 go run build/build.go mds v1.3.0
 ```
 
-assuming you actually have Go installed and the version is currently v1.3.0.
+assuming you actually have Go installed, you are in the project folder and the version is currently v1.3.0.
