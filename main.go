@@ -37,7 +37,7 @@ Usage: ${prog} --file=FILE.md
 func main() {
 	// Flags
 	help := flag.Bool("help", false, "show help")
-	dark := flag.Bool("dark", false, "enable dark theme")
+	dark := flag.Bool("dark", true, "enable dark theme")
 	mathMode := flag.Bool("math", true, "enable MathJax")
 	port := flag.String("port", "8080", "server port")
 	file := flag.String("file", "", "filename")
@@ -45,8 +45,11 @@ func main() {
 
 	if *help {
 		usage("")
-	} else if *file == "" {
-		usage("Please provide a file as an argument e.g. --file=README.md")
+		os.Exit(0)
+	}
+	if *file == "" {
+		*file = "index.md"
+		fmt.Printf("Filename not specified -- defaulting to \"index.md\"\n\n")
 	}
 
 	config := Config{DarkMode: *dark, FileName: *file, MathJax: *mathMode}
@@ -83,6 +86,23 @@ func main() {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL)
+
+		// Get pathname
+		if r.URL.String() == "/" {
+			config.FileName = *file
+		} else {
+			// Check if URL attempts to escape from current directory
+			if matches, _ := filepath.Match("*", filepath.Clean(r.URL.String()[1:])); !matches {
+				log.Printf("Malicious access: %s", r.URL)
+				w.WriteHeader(http.StatusBadRequest)
+				err := fmt.Sprintf("Bad Request: \"%s\" attempts to escape current directory", config.FileName)
+				fmt.Fprintln(w, err)
+				return
+			} else {
+				config.FileName = r.URL.String()[1:]
+			}
+		}
+
 		if config.DarkMode {
 			Render(w, r, gmDark, templ, config)
 		} else {
@@ -185,5 +205,4 @@ func usage(note string) {
 	}
 	_, fileName := filepath.Split(os.Args[0])
 	fmt.Println(strings.Replace(helpText, "${prog}", fileName, -1))
-	os.Exit(0)
 }

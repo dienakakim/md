@@ -20,7 +20,7 @@
         // includes TeX before importing it
         (function () {
             var body = document.body.textContent;
-            if (body.match(/(?:\$|\\\(|\\\[|\\begin\{.*?})/)) {
+            if (body.match(/(?:\$|\\\(|\\\[|\\begin\{.*?}])/)) {
                 if (!window.MathJax) {
                     window.MathJax = {
                         startup: {
