@@ -92,7 +92,8 @@ func main() {
 			config.FileName = *file
 		} else {
 			// Check if URL attempts to escape from current directory
-			if matches, _ := filepath.Match("*", filepath.Clean(r.URL.String()[1:])); !matches {
+			fileName := filepath.Clean(r.URL.String())
+			if strings.Contains(fileName, "/../") {
 				log.Printf("Malicious access: %s", r.URL)
 				w.WriteHeader(http.StatusBadRequest)
 				err := fmt.Sprintf("Bad Request: \"%s\" attempts to escape current directory", config.FileName)
