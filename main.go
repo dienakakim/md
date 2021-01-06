@@ -77,7 +77,7 @@ func main() {
 	// - Auto heading ID generation
 	goldmarkInitializer := func(style string) goldmark.Markdown {
 		return goldmark.New(goldmark.WithExtensions(extension.GFM, mathjax.MathJax, highlighting.NewHighlighting(highlighting.WithStyle(style))), goldmark.WithRendererOptions(html.WithUnsafe()),
-			goldmark.WithParserOptions(parser.WithAutoHeadingID()))
+			goldmark.WithParserOptions(parser.WithAutoHeadingID(), parser.WithHeadingAttribute()))
 	}
 	gmLight := goldmarkInitializer("monokailight")
 	gmDark := goldmarkInitializer("solarized-dark")
