@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -85,14 +86,15 @@ func main() {
 	// Create new ServeMux
 	sm := http.NewServeMux()
 	sm.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL)
+		unescapedFileName, _ := url.QueryUnescape(filepath.Clean(r.URL.String()))
+		fileName := filepath.ToSlash(unescapedFileName)
+		log.Printf("%s %s", r.Method, fileName)
 
 		// Get pathname
 		if r.URL.String() == "/" {
 			config.FileName = *file
 		} else {
 			// Check if URL attempts to escape from current directory
-			fileName := filepath.Clean(r.URL.String())
 			if strings.Contains(fileName, "/../") {
 				log.Printf("Malicious access: %s", r.URL)
 				w.WriteHeader(http.StatusBadRequest)
@@ -100,7 +102,7 @@ func main() {
 				fmt.Fprintln(w, err)
 				return
 			} else {
-				config.FileName = r.URL.String()[1:]
+				config.FileName = fileName[1:]
 			}
 		}
 
